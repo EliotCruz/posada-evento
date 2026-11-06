@@ -1,0 +1,7 @@
+---
+import Base from '../../layouts/Base.astro';
+import AdminApp from '../../components/admin/AdminApp';
+---
+<Base title="Sorteo">
+  <AdminApp client:only="preact" vista="sorteo" base={import.meta.env.BASE_URL} />
+</Base>

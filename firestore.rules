@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function esAdmin() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function docNumero(n) {
+      return /databases/$(database)/documents/numeros/$(string(n));
+    }
+
+    // Lista de números del sorteo (solo ids; no contiene datos personales).
+    match /meta/pool {
+      allow read: if true;
+      allow write: if esAdmin();
+    }
+
+    // Marca de disponibilidad por número. El público solo puede pasar false -> true.
+    match /numeros/{n} {
+      allow read: if true;
+      allow update: if resource.data.tomado == false
+                    && request.resource.data.keys().hasOnly(['tomado'])
+                    && request.resource.data.tomado == true;
+      allow write: if esAdmin();
+    }
+
+    // Registros: el público solo CREA (una vez por empleado) y no puede leer ni listar.
+    match /registros/{emp} {
+      allow create: if emp.matches('^[A-Z0-9-]{1,20}$')
+        && request.resource.data.keys().hasOnly(['nombre','telefono','empleado','transporte','numero','codigo','creado'])
+        && request.resource.data.empleado == emp
+        && request.resource.data.nombre is string
+        && request.resource.data.nombre.size() >= 3 && request.resource.data.nombre.size() <= 100
+        && request.resource.data.telefono.matches('^[0-9]{10}$')
+        && request.resource.data.transporte is bool
+        && request.resource.data.numero is int
+        && request.resource.data.codigo.matches('^[A-Z2-9]{3}-[A-Z2-9]{3}$')
+        && request.resource.data.creado == request.time
+        && getAfter(docNumero(request.resource.data.numero)).data.tomado == true
+        && get(docNumero(request.resource.data.numero)).data.tomado == false;
+      allow read, update, delete: if esAdmin();
+    }
+
+    match /ganadores/{n} {
+      allow read, write: if esAdmin();
+    }
+
+    // Cada usuario solo puede comprobar si él mismo es admin. Los admins se crean desde la consola.
+    match /admins/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
