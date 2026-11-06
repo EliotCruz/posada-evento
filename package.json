@@ -8,7 +8,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "test": "vitest run",
-    "seed": "node scripts/seed-numeros.mjs"
+    "seed": "node scripts/seed-numeros.mjs",
+    "deploy": "npm run build && npx firebase-tools deploy --only hosting,firestore:rules"
   },
   "dependencies": {
     "@astrojs/preact": "^6.1.2",

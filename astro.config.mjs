@@ -2,10 +2,10 @@ import { defineConfig } from 'astro/config';
 import preact from '@astrojs/preact';
 import tailwindcss from '@tailwindcss/vite';
 
-// Ajusta `site` y `base` si cambia el usuario o el nombre del repositorio.
+// Publicado en Firebase Hosting (raíz del dominio). Cambia `site` si usas otro proyecto.
 export default defineConfig({
-  site: 'https://eliotcruz.github.io',
-  base: '/posada-evento',
+  site: 'https://evento-posada.web.app',
+  base: '/',
   output: 'static',
   integrations: [preact()],
   vite: { plugins: [tailwindcss()] },
