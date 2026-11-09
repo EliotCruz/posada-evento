@@ -39,6 +39,16 @@ export function crearFirestoreStore(): Store {
   return {
     modo: 'firebase',
 
+    async buscarEmpleado(empleado) {
+      try {
+        const s = await getDoc(doc(db, 'padron', empleado));
+        return s.exists() ? (s.data().nombre as string) : null;
+      } catch (e) {
+        if ((e as { code?: string }).code === 'permission-denied') return null;
+        throw new RegistroError('red');
+      }
+    },
+
     async registrar(input) {
       let candidatos: number[];
       try { candidatos = await leerPool(); } catch { throw new RegistroError('red'); }

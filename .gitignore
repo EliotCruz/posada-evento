@@ -8,3 +8,4 @@ dist/
 data-real/
 serviceAccount*.json
 *.log
+.firebase/

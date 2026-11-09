@@ -24,13 +24,19 @@ service cloud.firestore {
       allow write: if esAdmin();
     }
 
+    // Padrón de colaboradores invitados (número -> nombre). Se puede consultar por número (get), nunca listar.
+    match /padron/{emp} {
+      allow get: if true;
+      allow list, write: if esAdmin();
+    }
+
     // Registros: el público solo CREA (una vez por empleado) y no puede leer ni listar.
     match /registros/{emp} {
       allow create: if emp.matches('^[A-Z0-9-]{1,20}$')
         && request.resource.data.keys().hasOnly(['nombre','telefono','empleado','transporte','numero','codigo','creado'])
         && request.resource.data.empleado == emp
-        && request.resource.data.nombre is string
-        && request.resource.data.nombre.size() >= 3 && request.resource.data.nombre.size() <= 100
+        && exists(/databases/$(database)/documents/padron/$(emp))
+        && request.resource.data.nombre == get(/databases/$(database)/documents/padron/$(emp)).data.nombre
         && request.resource.data.telefono.matches('^[0-9]{10}$')
         && request.resource.data.transporte is bool
         && request.resource.data.numero is int

@@ -32,19 +32,20 @@ export default function AdminApp({ vista, base }: Props) {
         <input class="w-full rounded border px-3 py-2" type="email" placeholder="Correo" required value={email} onInput={(e) => setEmail((e.target as HTMLInputElement).value)} />
         <input class="w-full rounded border px-3 py-2" type="password" placeholder="Contraseña" required value={pass} onInput={(e) => setPass((e.target as HTMLInputElement).value)} />
         {error && <p role="alert" class="text-sm text-red-600">{error}</p>}
-        <button class="w-full rounded bg-emerald-600 py-2 font-semibold text-white">Entrar</button>
+        <button class="w-full rounded bg-brand-600 py-2 font-semibold text-white">Entrar</button>
         {admin === false && email === '' && <p class="text-xs text-slate-500">Solo cuentas registradas como administrador pueden ver los datos.</p>}
       </form>
     );
   }
 
   const link = (v: string, t: string, activo: boolean) => (
-    <a href={`${base.replace(/\/$/, '')}/admin${v}`} class={`rounded px-3 py-1.5 ${activo ? 'bg-emerald-600 text-white' : 'bg-white ring-1 ring-slate-300'}`}>{t}</a>
+    <a href={`${base.replace(/\/$/, '')}/admin${v}`} class={`rounded px-3 py-1.5 ${activo ? 'bg-brand-600 text-white' : 'bg-white ring-1 ring-slate-300'}`}>{t}</a>
   );
 
   return (
     <div class="mx-auto max-w-6xl p-4">
       <nav class="mb-4 flex flex-wrap items-center gap-2">
+        <a href={`${base.replace(/\/$/, '')}/`} class="rounded bg-white px-3 py-1.5 ring-1 ring-slate-300">← Menú</a>
         {link('/', 'Registros', vista === 'panel')}
         {link('/sorteo/', 'Sorteo', vista === 'sorteo')}
         {store.modo === 'demo' && <span class="rounded bg-amber-100 px-2 py-1 text-xs text-amber-800">MODO DEMO</span>}

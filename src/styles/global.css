@@ -1,4 +1,16 @@
 @import "tailwindcss";
 
+/* Paleta BorgWarner: negro + turquesa. "brand-600" (oscuro) es el color de acción; el turquesa va en acentos/focus. */
+@theme {
+  --color-brand-50: #effffb;
+  --color-brand-100: #cbfff3;
+  --color-brand-200: #8ff9e3;
+  --color-brand-300: #2ffad6;
+  --color-brand-400: #1fe0c0;
+  --color-brand-500: #12b89e;
+  --color-brand-600: #0b1215;
+  --color-brand-700: #000000;
+}
+
 :root { color-scheme: light; }
 body { @apply bg-slate-50 text-slate-900 antialiased; }

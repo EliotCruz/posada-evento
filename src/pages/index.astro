@@ -1,7 +1,23 @@
 ---
 import Base from '../layouts/Base.astro';
-import RegistroForm from '../components/RegistroForm';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const opciones = [
+  { href: `${base}/qr/`, icono: '📱', titulo: 'Código QR', texto: 'Pantalla para proyectar; lleva al formulario de registro.' },
+  { href: `${base}/registro/`, icono: '📝', titulo: 'Formulario', texto: 'Registro del colaborador para obtener su número de sorteo.' },
+  { href: `${base}/admin/`, icono: '🔒', titulo: 'Panel admin', texto: 'Registros y sorteo. Requiere usuario y contraseña.' },
+];
 ---
-<Base title="Registro Posada">
-  <RegistroForm client:load />
+<Base title="Posada BorgWarner — Menú">
+  <main class="mx-auto flex max-w-md flex-col gap-4 p-6 pt-10">
+    <h1 class="mb-2 text-center text-3xl font-extrabold tracking-tight">Posada 2026</h1>
+    {opciones.map((o) => (
+      <a href={o.href} class="flex items-center gap-4 rounded-2xl border-l-4 border-brand-300 bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-400">
+        <span class="text-4xl" aria-hidden="true">{o.icono}</span>
+        <span>
+          <span class="block text-lg font-bold">{o.titulo}</span>
+          <span class="block text-sm text-slate-600">{o.texto}</span>
+        </span>
+      </a>
+    ))}
+  </main>
 </Base>

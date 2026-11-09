@@ -23,6 +23,7 @@ function suscribir<T>(k: string, cb: (v: T[]) => void) {
 export function crearLocalStore(numeros: number[] = pool as number[]): Store {
   return {
     modo: 'demo',
+    async buscarEmpleado(empleado) { return /^[A-Z0-9-]{1,20}$/.test(empleado) ? `Colaborador ${empleado}` : null; },
     async registrar(input) {
       const regs = leer<Registro>(K_REG);
       if (regs.some((r) => r.empleado === input.empleado)) throw new RegistroError('duplicado');

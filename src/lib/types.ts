@@ -29,6 +29,8 @@ export type Unsub = () => void;
 
 export interface Store {
   modo: 'demo' | 'firebase';
+  /** Nombre del colaborador según el padrón, o null si el número no está en la lista. */
+  buscarEmpleado(empleado: string): Promise<string | null>;
   registrar(input: RegistroInput): Promise<Registro>;
   suscribirRegistros(cb: (r: Registro[]) => void): Unsub;
   suscribirGanadores(cb: (g: Ganador[]) => void): Unsub;
