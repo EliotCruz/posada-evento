@@ -1,57 +1,61 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
-import QRCode from 'qrcode';
-import { Arbol, Guirnalda, Regalos } from './Decoracion';
+import { componer, VERSIONES, type Version } from '../lib/cartel';
 
-export default function QrPantalla({ base }: { base: string }) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const [url, setUrl] = useState('');
-  const b = base.replace(/\/$/, '');
+export default function QrPantalla({ base, url }: { base: string; url: string }) {
+  const caja = useRef<HTMLDivElement>(null);
+  const [v, setV] = useState<Version>(VERSIONES[0]);
+  const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    const u = `${location.origin}${b}/registro/`;
-    setUrl(u);
-    const c = canvas.current;
-    if (c) {
-      QRCode.toCanvas(c, u, { width: 800, margin: 1, errorCorrectionLevel: 'M', color: { dark: '#0b1215', light: '#ffffff' } })
-        .then(() => { c.style.width = ''; c.style.height = ''; }); // la librería fija px inline; el tamaño lo da CSS
-    }
-  }, [b]);
+    let vivo = true;
+    setCanvas(null); setError('');
+    componer(v, url, base)
+      .then((c) => {
+        if (!vivo) return;
+        c.style.cssText = 'max-width:100%;max-height:calc(100vh - 13rem);width:auto;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.18)';
+        setCanvas(c);
+      })
+      .catch((e) => vivo && setError((e as Error).message));
+    return () => { vivo = false; };
+  }, [v, url, base]);
+
+  useEffect(() => {
+    caja.current?.replaceChildren(...(canvas ? [canvas] : []));
+  }, [canvas]);
+
+  function descargar() {
+    canvas?.toBlob((blob) => {
+      if (!blob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = v.archivo; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }, 'image/png');
+  }
 
   return (
-    <main class="relative flex min-h-screen flex-col items-center overflow-hidden bg-[#fbf7ef] text-center text-[#0b1215]">
-      <Guirnalda class="pointer-events-none absolute inset-x-0 top-0 h-[16vh] min-h-24 w-full" />
+    <main class="mx-auto max-w-5xl p-4">
+      <h1 class="text-xl font-bold">Imagen del código QR</h1>
+      <p class="mb-3 text-sm text-slate-600">
+        Elige el formato, descarga la imagen y úsala en el tótem o la pantalla (no requiere internet). El QR abre <span class="font-mono">{url}</span>
+      </p>
 
-      <div class="relative z-10 mt-[15vh] flex w-full max-w-3xl flex-1 flex-col items-center gap-[2.2vh] px-6 pb-2">
-        <img src={`${b}/logos/borgwarner-negro.png`} alt="BorgWarner" width="1902" height="161" class="h-[3.4vh] min-h-5 w-auto max-w-[80%]" />
-
-        <p class="text-[clamp(1.25rem,3.4vh,2.25rem)] leading-snug">
-          ¡Escanea el QR con tu celular<br />para completar <b>tu registro</b><br />para la gran rifa!
-        </p>
-
-        <div class="rounded-md bg-gradient-to-br from-[#f3d98b] via-[#c9962f] to-[#f3d98b] p-[6px] shadow-xl">
-          <div class="bg-white p-[1.6vh]">
-            <canvas ref={canvas} class="block aspect-square h-auto w-[min(31vh,70vw)] lg:w-[min(44vh,78vw)]" />
-          </div>
-        </div>
-
-        <p class="break-all font-mono text-[clamp(1rem,2.2vh,1.5rem)] text-slate-600">{url}</p>
-
-        {/* Pantallas angostas/verticales: árbol centrado abajo */}
-        <div class="mt-auto flex flex-col items-center lg:hidden">
-          <Arbol class="h-[14vh] w-auto" />
-          <Regalos class="-mt-[1.6vh] h-[5.5vh] w-auto" />
-        </div>
+      <div class="mb-4 flex flex-wrap items-center gap-2" role="tablist">
+        {VERSIONES.map((x) => (
+          <button key={x.id} role="tab" aria-selected={x.id === v.id} onClick={() => setV(x)}
+            class={`rounded-lg px-4 py-2 text-left ${x.id === v.id ? 'bg-brand-600 text-brand-300' : 'bg-white ring-1 ring-slate-300'}`}>
+            <span class="block font-semibold">{x.nombre}</span>
+            <span class="block text-xs opacity-75">{x.detalle}</span>
+          </button>
+        ))}
+        <button onClick={descargar} disabled={!canvas} class="ml-auto rounded-lg bg-brand-300 px-5 py-3 font-bold text-brand-600 disabled:opacity-50">
+          ⬇ Descargar PNG
+        </button>
       </div>
 
-      {/* Pantallas anchas (proyector): un árbol a cada lado */}
-      <div class="pointer-events-none absolute bottom-0 left-[4vw] hidden flex-col items-center lg:flex">
-        <Arbol class="h-[52vh] w-auto" />
-        <Regalos class="-mt-[4.5vh] h-[14vh] w-auto" />
-      </div>
-      <div class="pointer-events-none absolute bottom-0 right-[4vw] hidden flex-col items-center lg:flex">
-        <Arbol class="h-[52vh] w-auto" />
-        <Regalos class="-mt-[4.5vh] h-[14vh] w-auto scale-x-[-1]" />
-      </div>
+      {error && <p role="alert" class="rounded bg-red-50 px-3 py-2 text-red-700">{error}</p>}
+      {!canvas && !error && <p class="text-slate-500">Generando imagen…</p>}
+      <div ref={caja} class="flex justify-center" />
     </main>
   );
 }
