@@ -6,7 +6,7 @@ export type VersionId = 'totem' | 'horizontal' | 'vertical';
 export interface Version { id: VersionId; nombre: string; detalle: string; w: number; h: number; archivo: string }
 
 export const VERSIONES: Version[] = [
-  { id: 'totem', nombre: 'Tótem vertical', detalle: '1114 × 4000 px · proporción de la plantilla', w: 1114, h: 4000, archivo: 'qr-posada-totem.png' },
+  { id: 'totem', nombre: 'Tótem vertical 1:4', detalle: '1080 × 4320 px · proporción 1:4 (168 × 672)', w: 1080, h: 4320, archivo: 'qr-posada-totem-1x4.png' },
   { id: 'horizontal', nombre: 'Pantalla horizontal 16:9', detalle: '1920 × 1080 px · TV, proyector, monitor', w: 1920, h: 1080, archivo: 'qr-posada-pantalla-16x9.png' },
   { id: 'vertical', nombre: 'Pantalla vertical 9:16', detalle: '1080 × 1920 px · TV vertical, celular', w: 1080, h: 1920, archivo: 'qr-posada-vertical-9x16.png' },
 ];
@@ -23,13 +23,6 @@ function colorCrema(bg: HTMLImageElement, px = 20, py = 1000): [number, number, 
   const c = document.createElement('canvas'); c.width = c.height = 1;
   const x = c.getContext('2d')!; x.drawImage(bg, px, py, 1, 1, 0, 0, 1, 1);
   const d = x.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2]];
-}
-
-/** Degradado de la crema a transparente: difumina el borde de una copia de la plantilla. */
-function difuminar(ctx: CanvasRenderingContext2D, crema: number[], x0: number, x1: number, y: number, h: number) {
-  const g = ctx.createLinearGradient(x0, 0, x1, 0);
-  g.addColorStop(0, `rgba(${crema},1)`); g.addColorStop(1, `rgba(${crema},0)`);
-  ctx.fillStyle = g; ctx.fillRect(Math.min(x0, x1), y, Math.abs(x1 - x0), h);
 }
 
 type Parte = { t: string; negrita?: boolean };
@@ -91,7 +84,6 @@ export async function componer(v: Version, url: string, base: string): Promise<H
   const [tall, wide, logo] = await Promise.all([
     cargar(`${b}/fondos/plantilla.jpg`), cargar(`${b}/fondos/fondo-horizontal.jpg`), cargar(`${b}/logos/borgwarner-negro.png`),
   ]);
-  const bg = tall;
   const crema = v.id === 'totem' ? colorCrema(tall) : colorCrema(wide, 1000, 1000);
 
   const qr = document.createElement('canvas');
@@ -129,14 +121,20 @@ export async function componer(v: Version, url: string, base: string): Promise<H
     return c;
   }
 
-  // Tótem y vertical: la plantilla ocupa todo el alto y el contenido se ubica sobre su zona libre.
-  const s = v.h / BG_H, ox = (v.w - BG_W * s) / 2;
-  ctx.drawImage(bg, ox, 0, BG_W * s, v.h);
-  if (ox > 1) { difuminar(ctx, crema, ox, ox + 60, 0, v.h); difuminar(ctx, crema, v.w - ox, v.w - ox - 60, 0, v.h); ctx.fillStyle = `rgb(${crema})`; ctx.fillRect(0, 0, ox, v.h); ctx.fillRect(v.w - ox, 0, ox, v.h); }
-  const X = (u: number) => ox + u * s, Y = (u: number) => u * s;
-  const cx = X(BG_W / 2);
-  ctx.drawImage(logo, cx - 190 * s, Y(618), 380 * s, lw(380 * s));
-  LINEAS.forEach((l, i) => texto(ctx, cx, Y(728 + i * 50), l, 35 * s));
-  marcoQr(ctx, qr, cx - 230 * s, Y(862), 460 * s);
+  // Tótem 1:4. La plantilla (557×2000) es más ancha que 1:4, así que se ajusta al ancho: la guirnalda va pegada
+  // arriba, el árbol pegado abajo, y el tramo crema que sobra queda en medio, donde van logo, texto y QR.
+  const s = v.w / BG_W;
+  const CORTE = 900;                                   // fila de la plantilla donde se separa (zona crema)
+  recorte(ctx, tall, 0, 0, BG_W, CORTE, 0, 0, v.w, CORTE * s, { aba: 0.2 });
+  recorte(ctx, tall, 0, CORTE, BG_W, BG_H - CORTE, 0, v.h - (BG_H - CORTE) * s, v.w, (BG_H - CORTE) * s, { arr: 0.2 });
+  const libreArriba = 700 * s, libreAbajo = v.h - (BG_H - 1345) * s;   // entre la guirnalda y la estrella del árbol
+  const logoW = v.w * 0.62, lado = v.w * 0.8, px = v.w * 0.058, interlinea = px * 1.32;
+  const alto = lw(logoW) + 70 + interlinea * 3 + 60 + lado;
+  let y = (libreArriba + libreAbajo) / 2 - alto / 2;
+  const cx = v.w / 2;
+  ctx.drawImage(logo, cx - logoW / 2, y, logoW, lw(logoW)); y += lw(logoW) + 70 + px;
+  LINEAS.forEach((l, i) => texto(ctx, cx, y + i * interlinea, l, px));
+  y += interlinea * 2 + 60 + px * 0.3;
+  marcoQr(ctx, qr, cx - lado / 2, y, lado);
   return c;
 }
