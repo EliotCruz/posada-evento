@@ -109,7 +109,7 @@ export async function componer(v: Version, url: string, base: string): Promise<H
     // Imagen horizontal a pantalla completa (cubre el lienzo); contenido en la zona libre central.
     const s = Math.max(v.w / 2000, v.h / 1116);
     ctx.drawImage(wide, (v.w - 2000 * s) / 2, (v.h - 1116 * s) / 2, 2000 * s, 1116 * s);
-    const cx = v.w * 0.5;
+    const cx = v.w * 0.46;
     ctx.drawImage(logo, cx - 290, 215, 580, lw(580));
     LINEAS.forEach((l, i) => texto(ctx, cx, 345 + i * 58, l, 44));
     marcoQr(ctx, qr, cx - 250, 470, 500);

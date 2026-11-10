@@ -15,11 +15,11 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   </head>
   <body class="min-h-screen bg-[#fcf5e8]">
     {fondo ? (
-      /* Pantallas con la imagen navideña: completa en pantallas anchas; recortes arriba/abajo en las angostas. */
-      <div class="flex min-h-screen flex-col lg:bg-cover lg:bg-fixed lg:bg-center lg:bg-no-repeat lg:bg-[image:var(--fondo)]" style={`--fondo:url(${base}/fondos/fondo-horizontal.jpg)`}>
-        <FondoNavidad pos="arriba" class="lg:hidden" />
-        <div class="-mt-8 flex flex-1 flex-col items-center justify-center lg:mt-0"><slot /></div>
-        <FondoNavidad pos="abajo" class="-mt-4 lg:hidden" />
+      /* Móvil: plantilla alta (guirnalda arriba, árbol abajo). Escritorio/tableta horizontal (md+): imagen horizontal completa. */
+      <div class="flex min-h-screen flex-col md:landscape:bg-cover md:landscape:bg-fixed md:landscape:bg-center md:landscape:bg-no-repeat md:landscape:bg-[image:var(--fondo)]" style={`--fondo:url(${base}/fondos/fondo-horizontal.jpg)`}>
+        <FondoNavidad pos="arriba" class="md:landscape:hidden" />
+        <div class="-mt-10 flex flex-1 flex-col items-center justify-center md:landscape:mt-0"><slot /></div>
+        <FondoNavidad pos="abajo" class="md:landscape:hidden" />
       </div>
     ) : (
       <>

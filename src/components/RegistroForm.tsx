@@ -97,12 +97,12 @@ export default function RegistroForm() {
       <label class="block">
         <span class="font-medium">Número de empleado</span>
         <input class={campo} inputMode="numeric" autocapitalize="characters" autocomplete="off" value={f.empleado} onInput={(e) => cambiaEmpleado((e.target as HTMLInputElement).value)} />
-        <span class="mt-1 block min-h-5 text-sm" aria-live="polite">
-          {busq.estado === 'buscando' && <span class="text-slate-500">Buscando…</span>}
-          {busq.estado === 'ok' && <span class="font-semibold text-brand-500">✓ {busq.nombre}</span>}
-          {busq.estado === 'no' && <span class="text-red-600">No encontramos ese número en la lista de invitados. Revísalo o pide ayuda al organizador.</span>}
-          {busq.estado === 'red' && <span class="text-red-600">No pudimos consultar la lista. Revisa tu conexión.</span>}
-          {err.empleado && busq.estado !== 'no' && <span class="text-red-600">{err.empleado}</span>}
+        <span class="block text-sm" aria-live="polite">
+          {busq.estado === 'buscando' && <span class="mt-1 block text-slate-500">Buscando…</span>}
+          {busq.estado === 'ok' && <span class="mt-1 block font-semibold text-brand-500">✓ {busq.nombre}</span>}
+          {busq.estado === 'no' && <span class="mt-1 block text-red-600">No encontramos ese número en la lista de invitados. Revísalo o pide ayuda al organizador.</span>}
+          {busq.estado === 'red' && <span class="mt-1 block text-red-600">No pudimos consultar la lista. Revisa tu conexión.</span>}
+          {err.empleado && busq.estado !== 'no' && <span class="mt-1 block text-red-600">{err.empleado}</span>}
         </span>
       </label>
 
@@ -127,7 +127,7 @@ export default function RegistroForm() {
 
       {error && <p role="alert" class="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
 
-      <button disabled={enviando || busq.estado !== 'ok'} class="w-full rounded-lg bg-brand-600 py-3 text-lg font-semibold text-brand-300 disabled:opacity-50">
+      <button disabled={enviando || busq.estado !== 'ok'} class="w-full rounded-lg bg-brand-600 py-3 text-lg font-semibold text-brand-300 disabled:bg-slate-300 disabled:text-slate-600">
         {enviando ? 'Guardando…' : 'Registrarme'}
       </button>
       <p class="text-xs text-slate-500">

@@ -1,17 +1,18 @@
 ---
-// Recortes de la imagen horizontal para pantallas angostas: guirnalda (arriba-izquierda) o árbol (abajo-derecha),
-// con los bordes difuminados para que se fundan con el fondo crema.
+// Versión MÓVIL del fondo (plantilla alta): guirnalda (arriba) o árbol (abajo), recortes de la misma imagen con los bordes difuminados.
 interface Props { pos: 'arriba' | 'abajo'; class?: string }
 const { pos, class: cls = '' } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const lados = 'linear-gradient(to right,transparent,#000 14%,#000 86%,transparent)';
 const arriba = pos === 'arriba';
-// Región de la imagen (2000×1116): guirnalda x 0–1000, y 0–730 · árbol x 1080–2000, y 230–1116.
-const R = arriba ? { x: 0, y: 0, w: 1000, h: 600 } : { x: 1080, y: 230, w: 920, h: 886 };
-const f = (g: string) => `linear-gradient(${g},#000 70%,transparent)`;
-const mascara = arriba ? `${f('to bottom')},${f('to left')}` : `${f('to top')},${f('to right')}`;
-const estilo = `aspect-ratio:${R.w}/${R.h};mask-image:${mascara};-webkit-mask-image:${mascara};mask-composite:intersect;-webkit-mask-composite:source-in`;
-const imgEstilo = `width:${(2000 / R.w) * 100}%;margin-left:-${(R.x / R.w) * 100}%;margin-top:-${(R.y / R.w) * 100}%`;
+const estilo = [
+  `aspect-ratio:${arriba ? '557/400' : '557/680'}`,
+  `mask-image:linear-gradient(to ${arriba ? 'bottom' : 'top'},#000 72%,transparent),${lados}`,
+  'mask-composite:intersect',
+  '-webkit-mask-image:' + `linear-gradient(to ${arriba ? 'bottom' : 'top'},#000 72%,transparent),${lados}`,
+  '-webkit-mask-composite:source-in',
+].join(';');
 ---
-<div class={`pointer-events-none overflow-hidden ${arriba ? 'w-[min(100%,520px)]' : 'ml-auto w-[min(78%,340px)]'} ${cls}`} style={estilo} aria-hidden="true">
-  <img src={`${base}/fondos/fondo-horizontal.jpg`} alt="" width="2000" height="1116" class="block max-w-none" style={imgEstilo} />
+<div class={`pointer-events-none mx-auto w-full overflow-hidden ${arriba ? 'max-w-[520px]' : 'max-w-[340px]'} ${cls}`} style={estilo} aria-hidden="true">
+  <img src={`${base}/fondos/plantilla.jpg`} alt="" width="557" height="2000" class="block w-full" style={arriba ? '' : 'margin-top:-237%'} />
 </div>

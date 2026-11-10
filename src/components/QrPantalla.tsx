@@ -13,7 +13,8 @@ export default function QrPantalla({ base, url }: { base: string; url: string })
     componer(v, url, base)
       .then((c) => {
         if (!vivo) return;
-        c.style.cssText = 'max-width:100%;max-height:calc(100vh - 13rem);width:auto;height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.18)';
+        const ancho = matchMedia('(min-width:768px)').matches; // en móvil se muestra a todo el ancho (la tira vertical es larga)
+        c.style.cssText = `max-width:100%;${ancho ? 'max-height:calc(100vh - 13rem);' : ''}width:${ancho ? 'auto' : '100%'};height:auto;border-radius:6px;box-shadow:0 8px 30px rgba(0,0,0,.18)`;
         setCanvas(c);
       })
       .catch((e) => vivo && setError((e as Error).message));
@@ -34,7 +35,7 @@ export default function QrPantalla({ base, url }: { base: string; url: string })
   }
 
   return (
-    <main class="w-full max-w-4xl p-4 lg:my-8 lg:rounded-2xl lg:bg-white/75 lg:p-6 lg:shadow-lg lg:backdrop-blur-sm">
+    <main class="w-full max-w-3xl p-4 md:landscape:my-8 md:landscape:rounded-2xl md:landscape:bg-white/75 md:landscape:p-6 md:landscape:shadow-lg md:landscape:backdrop-blur-sm">
       <img src={`${base.replace(/\/$/, '')}/logos/borgwarner-negro.png`} alt="BorgWarner" width="1902" height="161" class="mb-3 h-5 w-auto" />
       <h1 class="text-xl font-bold">Imagen del código QR</h1>
       <p class="mb-3 text-sm text-slate-600">
