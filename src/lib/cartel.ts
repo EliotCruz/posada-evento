@@ -19,9 +19,9 @@ const cargar = (src: string) => new Promise<HTMLImageElement>((ok, mal) => {
   const i = new Image(); i.onload = () => ok(i); i.onerror = () => mal(new Error(`No se pudo cargar ${src}`)); i.src = src;
 });
 
-function colorCrema(bg: HTMLImageElement): [number, number, number] {
+function colorCrema(bg: HTMLImageElement, px = 20, py = 1000): [number, number, number] {
   const c = document.createElement('canvas'); c.width = c.height = 1;
-  const x = c.getContext('2d')!; x.drawImage(bg, 20, 1000, 1, 1, 0, 0, 1, 1);
+  const x = c.getContext('2d')!; x.drawImage(bg, px, py, 1, 1, 0, 0, 1, 1);
   const d = x.getImageData(0, 0, 1, 1).data; return [d[0], d[1], d[2]];
 }
 
@@ -64,10 +64,35 @@ function marcoQr(ctx: CanvasRenderingContext2D, qr: HTMLCanvasElement, x: number
   ctx.imageSmoothingEnabled = true;
 }
 
+/** Dibuja una región de la imagen con los bordes indicados difuminados (fracción del tamaño). */
+function recorte(
+  ctx: CanvasRenderingContext2D, img: HTMLImageElement,
+  sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number,
+  bordes: Partial<Record<'arr' | 'aba' | 'izq' | 'der', number>>,
+) {
+  const t = document.createElement('canvas'); t.width = Math.ceil(dw); t.height = Math.ceil(dh);
+  const c = t.getContext('2d')!; c.imageSmoothingQuality = 'high';
+  c.drawImage(img, sx, sy, sw, sh, 0, 0, t.width, t.height);
+  c.globalCompositeOperation = 'destination-in';
+  const f = (x0: number, y0: number, x1: number, y1: number, parada: number) => {
+    const g = c.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(parada, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,1)');
+    c.fillStyle = g; c.fillRect(0, 0, t.width, t.height);
+  };
+  if (bordes.arr) f(0, 0, 0, t.height, bordes.arr);
+  if (bordes.aba) f(0, t.height, 0, 0, bordes.aba);
+  if (bordes.izq) f(0, 0, t.width, 0, bordes.izq);
+  if (bordes.der) f(t.width, 0, 0, 0, bordes.der);
+  ctx.drawImage(t, dx, dy);
+}
+
 export async function componer(v: Version, url: string, base: string): Promise<HTMLCanvasElement> {
   const b = base.replace(/\/$/, '');
-  const [bg, logo] = await Promise.all([cargar(`${b}/fondos/plantilla.jpg`), cargar(`${b}/logos/borgwarner-negro.png`)]);
-  const crema = colorCrema(bg);
+  const [tall, wide, logo] = await Promise.all([
+    cargar(`${b}/fondos/plantilla.jpg`), cargar(`${b}/fondos/fondo-horizontal.jpg`), cargar(`${b}/logos/borgwarner-negro.png`),
+  ]);
+  const bg = tall;
+  const crema = v.id === 'totem' ? colorCrema(tall) : colorCrema(wide, 1000, 1000);
 
   const qr = document.createElement('canvas');
   await QRCode.toCanvas(qr, url, { width: 900, margin: 0, errorCorrectionLevel: 'M', color: { dark: TINTA, light: '#ffffff' } });
@@ -81,16 +106,26 @@ export async function componer(v: Version, url: string, base: string): Promise<H
   const lw = (bw: number) => bw * (logo.naturalHeight / logo.naturalWidth);
 
   if (v.id === 'horizontal') {
-    // Plantilla a los dos lados; el contenido va al centro, grande.
-    const s = v.h / BG_H, w = BG_W * s;
-    ctx.drawImage(bg, 0, 0, w, v.h);
-    ctx.drawImage(bg, v.w - w, 0, w, v.h);
-    difuminar(ctx, crema, w - 70, w, 0, v.h);
-    difuminar(ctx, crema, v.w - w + 70, v.w - w, 0, v.h);
-    const cx = v.w / 2;
-    ctx.drawImage(logo, cx - 320, 70, 640, lw(640));
-    LINEAS.forEach((l, i) => texto(ctx, cx, 218 + i * 62, l, 48));
-    marcoQr(ctx, qr, cx - 300, 400, 600);
+    // Imagen horizontal a pantalla completa (cubre el lienzo); contenido en la zona libre central.
+    const s = Math.max(v.w / 2000, v.h / 1116);
+    ctx.drawImage(wide, (v.w - 2000 * s) / 2, (v.h - 1116 * s) / 2, 2000 * s, 1116 * s);
+    const cx = v.w * 0.5;
+    ctx.drawImage(logo, cx - 290, 215, 580, lw(580));
+    LINEAS.forEach((l, i) => texto(ctx, cx, 345 + i * 58, l, 44));
+    marcoQr(ctx, qr, cx - 250, 470, 500);
+    return c;
+  }
+
+  if (v.id === 'vertical') {
+    // Imagen horizontal recortada: guirnalda arriba a la izquierda y árbol abajo a la derecha.
+    const sg = v.w * 0.92 / 1000;                       // guirnalda: región 1000×730 de la imagen
+    recorte(ctx, wide, 0, 0, 1000, 730, 0, 0, 1000 * sg, 730 * sg, { aba: 0.3, der: 0.3 });
+    const st = 0.7;                                     // árbol: región 920×886, abajo a la derecha
+    recorte(ctx, wide, 1080, 230, 920, 886, v.w - 920 * st, v.h - 886 * st, 920 * st, 886 * st, { arr: 0.12, izq: 0.18 });
+    const cx = v.w * 0.5;
+    ctx.drawImage(logo, cx - 230, 535, 460, lw(460));
+    LINEAS.forEach((l, i) => texto(ctx, cx, 645 + i * 58, l, 44));
+    marcoQr(ctx, qr, cx - 260, 790, 520);
     return c;
   }
 

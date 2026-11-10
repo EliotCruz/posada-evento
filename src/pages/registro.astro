@@ -1,14 +1,9 @@
 ---
 import Base from '../layouts/Base.astro';
 import RegistroForm from '../components/RegistroForm';
-import FondoNavidad from '../components/FondoNavidad.astro';
 ---
-<Base title="Registro Posada" marco={false}>
-  <div class="flex min-h-screen flex-col bg-[#fcf4e6]">
-    <FondoNavidad pos="arriba" />
-    <div class="-mt-10 flex-1">
-      <RegistroForm client:load />
-    </div>
-    <FondoNavidad pos="abajo" />
+<Base title="Registro Posada" fondo>
+  <div class="w-full max-w-md lg:my-8 lg:rounded-3xl lg:bg-white/75 lg:shadow-xl lg:backdrop-blur-sm">
+    <RegistroForm client:load />
   </div>
 </Base>

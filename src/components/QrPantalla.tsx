@@ -34,7 +34,8 @@ export default function QrPantalla({ base, url }: { base: string; url: string })
   }
 
   return (
-    <main class="mx-auto max-w-5xl p-4">
+    <main class="w-full max-w-4xl p-4 lg:my-8 lg:rounded-2xl lg:bg-white/75 lg:p-6 lg:shadow-lg lg:backdrop-blur-sm">
+      <img src={`${base.replace(/\/$/, '')}/logos/borgwarner-negro.png`} alt="BorgWarner" width="1902" height="161" class="mb-3 h-5 w-auto" />
       <h1 class="text-xl font-bold">Imagen del código QR</h1>
       <p class="mb-3 text-sm text-slate-600">
         Elige el formato, descarga la imagen y úsala en el tótem o la pantalla (no requiere internet). El QR abre <span class="font-mono">{url}</span>

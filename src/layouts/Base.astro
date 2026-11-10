@@ -1,7 +1,8 @@
 ---
 import '../styles/global.css';
-interface Props { title: string; marco?: boolean }
-const { title, marco = true } = Astro.props;
+import FondoNavidad from '../components/FondoNavidad.astro';
+interface Props { title: string; fondo?: boolean }
+const { title, fondo = false } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 <!doctype html>
@@ -12,14 +13,25 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <meta name="robots" content="noindex, nofollow" />
     <title>{title}</title>
   </head>
-  <body class="flex min-h-screen flex-col">
-    {marco && <header class="bg-brand-600">
-      <a href={`${base}/`} class="mx-auto flex max-w-6xl items-center justify-center px-4 py-4" aria-label="BorgWarner — inicio">
-        <img src={`${base}/logos/borgwarner-teal.png`} alt="BorgWarner" width="1902" height="161" class="h-5 w-auto sm:h-6" />
-      </a>
-      <div class="h-1 bg-brand-300"></div>
-    </header>}
-    <div class="flex-1"><slot /></div>
-    {marco && <footer class="px-4 py-5 text-center text-xs text-slate-500">Posada 2026 · BorgWarner</footer>}
+  <body class="min-h-screen bg-[#fcf5e8]">
+    {fondo ? (
+      /* Pantallas con la imagen navideña: completa en pantallas anchas; recortes arriba/abajo en las angostas. */
+      <div class="flex min-h-screen flex-col lg:bg-cover lg:bg-fixed lg:bg-center lg:bg-no-repeat lg:bg-[image:var(--fondo)]" style={`--fondo:url(${base}/fondos/fondo-horizontal.jpg)`}>
+        <FondoNavidad pos="arriba" class="lg:hidden" />
+        <div class="-mt-8 flex flex-1 flex-col items-center justify-center lg:mt-0"><slot /></div>
+        <FondoNavidad pos="abajo" class="-mt-4 lg:hidden" />
+      </div>
+    ) : (
+      <>
+        <header class="bg-brand-600">
+          <a href={`${base}/`} class="mx-auto flex max-w-6xl items-center justify-center px-4 py-4" aria-label="BorgWarner — inicio">
+            <img src={`${base}/logos/borgwarner-teal.png`} alt="BorgWarner" width="1902" height="161" class="h-5 w-auto sm:h-6" />
+          </a>
+          <div class="h-1 bg-brand-300"></div>
+        </header>
+        <slot />
+        <footer class="px-4 py-5 text-center text-xs text-slate-500">Posada 2026 · BorgWarner</footer>
+      </>
+    )}
   </body>
 </html>

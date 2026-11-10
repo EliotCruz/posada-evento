@@ -4,6 +4,6 @@ import QrPantalla from '../components/QrPantalla';
 // El QR siempre apunta al sitio publicado, aunque la página se abra desde otro host.
 const url = new URL('registro/', Astro.site).href;
 ---
-<Base title="QR Posada">
+<Base title="QR Posada" fondo>
   <QrPantalla client:only="preact" base={import.meta.env.BASE_URL} url={url} />
 </Base>
