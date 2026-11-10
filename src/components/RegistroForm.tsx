@@ -66,6 +66,7 @@ export default function RegistroForm() {
   if (listo) {
     return (
       <section class="mx-auto max-w-md p-5 text-center" aria-live="polite">
+        <img src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/logos/borgwarner-negro.png`} alt="BorgWarner" width="1902" height="161" class="mx-auto mb-4 h-5 w-auto" />
         <div class="overflow-hidden rounded-2xl bg-white shadow-lg ring-1 ring-slate-200">
           <div class="bg-brand-600 px-6 py-4">
             <p class="text-sm font-semibold uppercase tracking-widest text-brand-300">Registro exitoso</p>
@@ -83,13 +84,14 @@ export default function RegistroForm() {
     );
   }
 
-  const campo = 'mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300';
+  const campo = 'mt-1 w-full rounded-lg border border-[#d9c49a] bg-white px-3 py-3 text-base focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-300';
   return (
     <form class="mx-auto max-w-md space-y-4 p-5" onSubmit={enviar} noValidate>
       {demo && <p class="rounded bg-amber-100 px-3 py-2 text-sm text-amber-800">Modo demo: los datos solo se guardan en este navegador.</p>}
       <header class="text-center">
-        <h1 class="text-2xl font-bold">Registro Posada 2026</h1>
-        <p class="text-slate-600">Regístrate para participar en el sorteo.</p>
+        <img src={`${import.meta.env.BASE_URL.replace(/\/$/, '')}/logos/borgwarner-negro.png`} alt="BorgWarner" width="1902" height="161" class="mx-auto mb-3 h-5 w-auto" />
+        <h1 class="text-2xl font-bold">¡Regístrate para la gran rifa!</h1>
+        <p class="text-slate-600">Posada 2026</p>
       </header>
 
       <label class="block">

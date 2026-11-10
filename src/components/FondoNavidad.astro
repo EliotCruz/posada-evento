@@ -1,0 +1,18 @@
+---
+// Fondo de la plantilla: guirnalda (arriba) o árbol (abajo), recortes de la misma imagen con los bordes difuminados.
+interface Props { pos: 'arriba' | 'abajo' }
+const { pos } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const lados = 'linear-gradient(to right,transparent,#000 14%,#000 86%,transparent)';
+const arriba = pos === 'arriba';
+const estilo = [
+  `aspect-ratio:${arriba ? '557/400' : '557/680'}`,
+  `mask-image:linear-gradient(to ${arriba ? 'bottom' : 'top'},#000 72%,transparent),${lados}`,
+  'mask-composite:intersect',
+  '-webkit-mask-image:' + `linear-gradient(to ${arriba ? 'bottom' : 'top'},#000 72%,transparent),${lados}`,
+  '-webkit-mask-composite:source-in',
+].join(';');
+---
+<div class={`pointer-events-none mx-auto w-full overflow-hidden ${arriba ? 'max-w-[520px]' : 'max-w-[340px]'}`} style={estilo} aria-hidden="true">
+  <img src={`${base}/fondos/plantilla.jpg`} alt="" width="557" height="2000" class="block w-full" style={arriba ? '' : 'margin-top:-237%'} />
+</div>
