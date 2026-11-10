@@ -1,7 +1,7 @@
 ---
 import '../styles/global.css';
-interface Props { title: string }
-const { title } = Astro.props;
+interface Props { title: string; marco?: boolean }
+const { title, marco = true } = Astro.props;
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 ---
 <!doctype html>
@@ -13,13 +13,13 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, '');
     <title>{title}</title>
   </head>
   <body class="flex min-h-screen flex-col">
-    <header class="bg-brand-600">
+    {marco && <header class="bg-brand-600">
       <a href={`${base}/`} class="mx-auto flex max-w-6xl items-center justify-center px-4 py-4" aria-label="BorgWarner — inicio">
         <img src={`${base}/logos/borgwarner-teal.png`} alt="BorgWarner" width="1902" height="161" class="h-5 w-auto sm:h-6" />
       </a>
       <div class="h-1 bg-brand-300"></div>
-    </header>
+    </header>}
     <div class="flex-1"><slot /></div>
-    <footer class="px-4 py-5 text-center text-xs text-slate-500">Posada 2026 · BorgWarner</footer>
+    {marco && <footer class="px-4 py-5 text-center text-xs text-slate-500">Posada 2026 · BorgWarner</footer>}
   </body>
 </html>
