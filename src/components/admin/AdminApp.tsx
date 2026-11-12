@@ -19,15 +19,19 @@ export default function AdminApp({ vista, base }: Props) {
     return () => off();
   }, []);
 
+  const b = base.replace(/\/$/, '');
+  const logo = <img src={`${b}/logos/borgwarner-negro.png`} alt="BorgWarner" width="1902" height="161" class="mx-auto mb-4 h-5 w-auto" />;
+
   if (!store || admin === null) return <p class="p-6 text-center text-slate-500">Cargando…</p>;
 
   if (!admin) {
     return (
-      <form class="mx-auto mt-16 max-w-sm space-y-3 rounded-2xl bg-white p-6 shadow" onSubmit={async (e) => {
+      <form class="my-8 w-full max-w-sm space-y-3 rounded-2xl bg-white/90 p-6 shadow-lg ring-1 ring-slate-200 backdrop-blur-sm" onSubmit={async (e) => {
         e.preventDefault(); setError('');
         try { await store.login(email, pass); } catch (x) { setError((x as Error).message || 'No se pudo iniciar sesión.'); }
       }}>
-        <h1 class="text-xl font-bold">Acceso administrador</h1>
+        {logo}
+        <h1 class="text-center text-xl font-bold">Acceso administrador</h1>
         {store.modo === 'demo' && <p class="rounded bg-amber-100 px-3 py-2 text-sm text-amber-800">Modo demo: usa cualquier correo y la contraseña <b>demo</b>.</p>}
         <input class="w-full rounded border px-3 py-2" type="email" placeholder="Correo" required value={email} onInput={(e) => setEmail((e.target as HTMLInputElement).value)} />
         <input class="w-full rounded border px-3 py-2" type="password" placeholder="Contraseña" required value={pass} onInput={(e) => setPass((e.target as HTMLInputElement).value)} />
@@ -43,7 +47,8 @@ export default function AdminApp({ vista, base }: Props) {
   );
 
   return (
-    <div class="mx-auto max-w-6xl p-4">
+    <div class="w-full max-w-6xl p-4 md:landscape:my-6 md:landscape:rounded-2xl md:landscape:bg-white/80 md:landscape:p-6 md:landscape:shadow-lg md:landscape:ring-1 md:landscape:ring-slate-200 md:landscape:backdrop-blur-sm">
+      {logo}
       <nav class="mb-4 flex flex-wrap items-center gap-2">
         <a href={`${base.replace(/\/$/, '')}/`} class="rounded bg-white px-3 py-1.5 ring-1 ring-slate-300">← Menú</a>
         {link('/', 'Registros', vista === 'panel')}
