@@ -3,12 +3,10 @@ import { getStore } from '../lib/store';
 import { limpiar, normalizarEmpleado, validar, type Errores, type FormRaw } from '../lib/validacion';
 import { RegistroError, type Registro } from '../lib/types';
 
-const K = 'posada:mi-registro';
 const vacio: FormRaw = { nombre: '', telefono: '', empleado: '', transporte: null };
 
 const MENSAJES: Record<string, string> = {
   duplicado: 'Este número de empleado ya está registrado. Si ya te registraste, revisa tu pantalla anterior o pide ayuda al organizador.',
-  'sin-numeros': 'Ya no hay números de sorteo disponibles. Avisa al organizador.',
   red: 'No pudimos guardar tu registro. Revisa tu conexión e inténtalo de nuevo.',
   invalido: 'Revisa los datos del formulario.',
 };
@@ -26,7 +24,6 @@ export default function RegistroForm() {
   const ultima = useRef('');
 
   useEffect(() => {
-    try { const g = localStorage.getItem(K); if (g) setListo(JSON.parse(g)); } catch {}
     getStore().then((s) => setDemo(s.modo === 'demo'));
   }, []);
 
@@ -56,11 +53,14 @@ export default function RegistroForm() {
     setEnviando(true); setError('');
     try {
       const r = await (await getStore()).registrar(limpiar(f));
-      try { localStorage.setItem(K, JSON.stringify(r)); } catch {}
       setListo(r);
     } catch (x) {
       setError(MENSAJES[x instanceof RegistroError ? x.codigo : 'red']);
     } finally { setEnviando(false); }
+  }
+
+  function otro() {
+    setListo(null); setF(vacio); setErr({}); setError(''); setBusq({ estado: 'idle' }); ultima.current = '';
   }
 
   if (listo) {
@@ -78,6 +78,7 @@ export default function RegistroForm() {
             <p class="mt-5 text-sm uppercase tracking-wide text-slate-500">Código de verificación</p>
             <p class="font-mono text-3xl font-bold tracking-widest">{listo.codigo}</p>
             <p class="mt-5 text-sm text-slate-500">Guarda o toma captura de esta pantalla. Si ganas, te pediremos tu código.</p>
+            <button type="button" onClick={otro} class="mt-6 w-full rounded-lg border border-brand-600 py-3 font-semibold text-brand-600">Registrar a otro colaborador</button>
           </div>
         </div>
       </section>

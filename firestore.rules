@@ -5,22 +5,12 @@ service cloud.firestore {
       return request.auth != null &&
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
-    function docNumero(n) {
-      return /databases/$(database)/documents/numeros/$(string(n));
-    }
 
-    // Lista de números del sorteo (solo ids; no contiene datos personales).
-    match /meta/pool {
+    // Contador del número de sorteo consecutivo. El público solo puede sumarle exactamente 1 (al registrarse).
+    match /meta/contador {
       allow read: if true;
-      allow write: if esAdmin();
-    }
-
-    // Marca de disponibilidad por número. El público solo puede pasar false -> true.
-    match /numeros/{n} {
-      allow read: if true;
-      allow update: if resource.data.tomado == false
-                    && request.resource.data.keys().hasOnly(['tomado'])
-                    && request.resource.data.tomado == true;
+      allow update: if request.resource.data.keys().hasOnly(['ultimo'])
+                    && request.resource.data.ultimo == resource.data.ultimo + 1;
       allow write: if esAdmin();
     }
 
@@ -42,8 +32,9 @@ service cloud.firestore {
         && request.resource.data.numero is int
         && request.resource.data.codigo.matches('^[A-Z2-9]{3}-[A-Z2-9]{3}$')
         && request.resource.data.creado == request.time
-        && getAfter(docNumero(request.resource.data.numero)).data.tomado == true
-        && get(docNumero(request.resource.data.numero)).data.tomado == false;
+        && request.resource.data.numero == getAfter(/databases/$(database)/documents/meta/contador).data.ultimo
+        && getAfter(/databases/$(database)/documents/meta/contador).data.ultimo
+           == get(/databases/$(database)/documents/meta/contador).data.ultimo + 1;
       allow read, update, delete: if esAdmin();
     }
 

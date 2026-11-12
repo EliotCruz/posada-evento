@@ -15,7 +15,7 @@ npm install
 npm run dev     # http://localhost:4321/
 npm test
 ```
-`npm run dev` no usa `.env.production`, así que corre en **modo demo** (datos en `localStorage`, admin con contraseña `demo`). Pool de prueba: `src/data/numeros-prueba.json` (1–500). `npm run build` sí usa `.env.production` (Firebase real).
+`npm run dev` no usa `.env.production`, así que corre en **modo demo** (datos en `localStorage`, admin con contraseña `demo`). Los números de sorteo son consecutivos (1, 2, 3…). `npm run build` sí usa `.env.production` (Firebase real).
 
 ## Poner en producción (Firebase Hosting)
 1. **Firestore**: consola → Build → Firestore Database → Create database (modo producción).
@@ -27,11 +27,7 @@ npm test
    npx firebase-tools login
    npm run deploy
    ```
-5. **Carga los números**: con una cuenta de servicio (Project settings → Service accounts → Generate key; guárdala fuera del repo):
-   ```bash
-   GOOGLE_APPLICATION_CREDENTIALS=serviceAccount.json npm run seed -- data-real/numeros.json
-   ```
-   El archivo es un arreglo de enteros. Sin argumento carga los de prueba (1–500).
+5. **Contador y padrón**: el número de sorteo es **consecutivo** (1, 2, 3…) y sale del documento `meta/contador` (`{ ultimo: 0 }`, créalo antes del evento). El padrón de colaboradores va en la colección `padron` (ID = número de empleado, campo `nombre`); solo esos números pueden registrarse. Al eliminar un registro su número no se reutiliza.
 6. Abre https://evento-posada.web.app/qr/ y proyéctalo.
 
 ## Notas de seguridad

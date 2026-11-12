@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { limpiar, validar } from '../src/lib/validacion';
-import { generarCodigo, elegirAleatorio } from '../src/lib/pool';
+import { generarCodigo } from '../src/lib/pool';
 import { registrosACsv } from '../src/lib/csv';
 import { crearLocalStore } from '../src/lib/localStore';
-import { RegistroError } from '../src/lib/types';
 
 const ok = { nombre: 'Ana López', telefono: '(477) 123-4567', empleado: ' a-123 ', transporte: true };
 
@@ -21,10 +20,6 @@ describe('validacion', () => {
 describe('pool', () => {
   it('genera códigos con formato XXX-XXX', () => {
     for (let i = 0; i < 50; i++) expect(generarCodigo()).toMatch(/^[A-Z2-9]{3}-[A-Z2-9]{3}$/);
-  });
-  it('elegirAleatorio respeta el rng y falla con pool vacío', () => {
-    expect(elegirAleatorio([10, 20, 30], () => 0.99)).toBe(30);
-    expect(() => elegirAleatorio([])).toThrow();
   });
 });
 
@@ -46,28 +41,29 @@ describe('localStore (modo demo)', () => {
     };
   });
 
-  it('asigna números únicos y bloquea empleados duplicados', async () => {
-    const s = crearLocalStore([1, 2, 3]);
+  it('asigna números consecutivos desde 1 y bloquea empleados duplicados', async () => {
+    const s = crearLocalStore();
     const base = { nombre: 'Ana López', telefono: '4771234567', transporte: false };
     const a = await s.registrar({ ...base, empleado: 'E1' });
     const b = await s.registrar({ ...base, empleado: 'E2' });
-    expect(a.numero).not.toBe(b.numero);
+    expect([a.numero, b.numero]).toEqual([1, 2]);
     await expect(s.registrar({ ...base, empleado: 'E1' })).rejects.toMatchObject({ codigo: 'duplicado' });
+    const c = await s.registrar({ ...base, empleado: 'E3' }); // el duplicado rechazado no consume número
+    expect(c.numero).toBe(3);
   });
 
-  it('se agota el pool y libera el número al eliminar', async () => {
-    const s = crearLocalStore([1]);
+  it('al eliminar un registro la numeración no se reutiliza', async () => {
+    const s = crearLocalStore();
     const base = { nombre: 'Ana López', telefono: '4771234567', transporte: true };
     const a = await s.registrar({ ...base, empleado: 'E1' });
-    await expect(s.registrar({ ...base, empleado: 'E2' })).rejects.toBeInstanceOf(RegistroError);
     await s.eliminarRegistro(a);
-    await expect(s.registrar({ ...base, empleado: 'E2' })).resolves.toMatchObject({ numero: 1 });
+    await expect(s.registrar({ ...base, empleado: 'E2' })).resolves.toMatchObject({ numero: 2 });
   });
 
-  it('500 registros concurrentes no repiten número', async () => {
-    const s = crearLocalStore(Array.from({ length: 500 }, (_, i) => i + 1));
+  it('500 registros seguidos no repiten número y son 1…500', async () => {
+    const s = crearLocalStore();
     const rs = [];
     for (let i = 0; i < 500; i++) rs.push(await s.registrar({ nombre: 'Ana López', telefono: '4771234567', transporte: false, empleado: `E${i}` }));
-    expect(new Set(rs.map((r) => r.numero)).size).toBe(500);
+    expect(rs.map((r) => r.numero)).toEqual(Array.from({ length: 500 }, (_, i) => i + 1));
   });
 });

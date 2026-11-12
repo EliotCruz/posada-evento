@@ -1,12 +1,12 @@
 // MODO DEMO: guarda todo en localStorage del navegador (sin Firebase).
 // Sirve para probar el flujo; los datos NO se comparten entre dispositivos.
-import pool from '../data/numeros-prueba.json';
-import { elegirAleatorio, generarCodigo } from './pool';
+import { generarCodigo } from './pool';
 import { RegistroError, type Ganador, type Registro, type Store } from './types';
 
 const K_REG = 'posada:registros';
 const K_GAN = 'posada:ganadores';
 const K_AUTH = 'posada:admin';
+const K_CNT = 'posada:contador';
 
 function leer<T>(k: string): T[] {
   try { return JSON.parse(localStorage.getItem(k) ?? '[]'); } catch { return []; }
@@ -20,23 +20,22 @@ function suscribir<T>(k: string, cb: (v: T[]) => void) {
   return () => clearInterval(id);
 }
 
-export function crearLocalStore(numeros: number[] = pool as number[]): Store {
+export function crearLocalStore(total = 500): Store {
   return {
     modo: 'demo',
     async buscarEmpleado(empleado) { return /^[A-Z0-9-]{1,20}$/.test(empleado) ? `Colaborador ${empleado}` : null; },
     async registrar(input) {
       const regs = leer<Registro>(K_REG);
       if (regs.some((r) => r.empleado === input.empleado)) throw new RegistroError('duplicado');
-      const usados = new Set(regs.map((r) => r.numero));
-      const libres = numeros.filter((n) => !usados.has(n));
-      if (!libres.length) throw new RegistroError('sin-numeros');
-      const r: Registro = { ...input, numero: elegirAleatorio(libres), codigo: generarCodigo(), creado: Date.now() };
+      const n = Number(localStorage.getItem(K_CNT) ?? 0) + 1; // consecutivo: 1, 2, 3…
+      localStorage.setItem(K_CNT, String(n));
+      const r: Registro = { ...input, numero: n, codigo: generarCodigo(), creado: Date.now() };
       escribir(K_REG, [...regs, r]);
       return r;
     },
     suscribirRegistros: (cb) => suscribir<Registro>(K_REG, cb),
     suscribirGanadores: (cb) => suscribir<Ganador>(K_GAN, cb),
-    totalNumeros: async () => numeros.length,
+    totalNumeros: async () => total,
     async eliminarRegistro(r) {
       escribir(K_REG, leer<Registro>(K_REG).filter((x) => x.empleado !== r.empleado));
     },

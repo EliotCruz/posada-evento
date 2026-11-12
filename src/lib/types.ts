@@ -18,7 +18,7 @@ export interface Ganador {
 
 export type RegistroInput = Pick<Registro, 'nombre' | 'telefono' | 'empleado' | 'transporte'>;
 
-export type CodigoError = 'duplicado' | 'sin-numeros' | 'invalido' | 'red';
+export type CodigoError = 'duplicado' | 'invalido' | 'red';
 export class RegistroError extends Error {
   constructor(public codigo: CodigoError, mensaje?: string) {
     super(mensaje ?? codigo);

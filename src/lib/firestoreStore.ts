@@ -1,15 +1,15 @@
 import { initializeApp } from 'firebase/app';
 import {
-  getFirestore, doc, getDoc, getDocs, setDoc, runTransaction, writeBatch, collection,
-  query, where, limit, onSnapshot, orderBy, serverTimestamp, type Timestamp,
+  getFirestore, doc, getDoc, setDoc, deleteDoc, runTransaction, collection, getCountFromServer,
+  onSnapshot, query, orderBy, serverTimestamp, type Timestamp,
 } from 'firebase/firestore';
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 import { firebaseConfig } from './firebase';
-import { elegirAleatorio, generarCodigo } from './pool';
+import { generarCodigo } from './pool';
 import { RegistroError, type Ganador, type Registro, type Store } from './types';
 
-class NumeroOcupado extends Error {}
-const MAX_INTENTOS_ALEATORIOS = 12;
+const MAX_INTENTOS = 8; // la transacción del contador se reintenta cuando varias personas se registran a la vez
+const espera = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const aMs = (t: unknown) => (t && typeof (t as Timestamp).toMillis === 'function' ? (t as Timestamp).toMillis() : Date.now());
 
@@ -17,24 +17,6 @@ export function crearFirestoreStore(): Store {
   const app = initializeApp(firebaseConfig as Record<string, string>);
   const db = getFirestore(app);
   const auth = getAuth(app);
-
-  async function leerPool(): Promise<number[]> {
-    const s = await getDoc(doc(db, 'meta', 'pool'));
-    return (s.data()?.numeros as number[] | undefined) ?? [];
-  }
-
-  /** Reserva `n` y crea el registro de forma atómica. Lanza NumeroOcupado si ya estaba tomado. */
-  function intentar(n: number, input: Parameters<Store['registrar']>[0]): Promise<Registro> {
-    const registro = { ...input, numero: n, codigo: generarCodigo() };
-    return runTransaction(db, async (tx) => {
-      const nref = doc(db, 'numeros', String(n));
-      const s = await tx.get(nref);
-      if (s.exists() && s.data().tomado) throw new NumeroOcupado();
-      tx.set(nref, { tomado: true });
-      tx.set(doc(db, 'registros', input.empleado), { ...registro, creado: serverTimestamp() });
-      return { ...registro, creado: Date.now() };
-    });
-  }
 
   return {
     modo: 'firebase',
@@ -49,39 +31,30 @@ export function crearFirestoreStore(): Store {
       }
     },
 
+    /** Número de sorteo consecutivo (1, 2, 3…): se toma del contador y se crea el registro en la misma transacción. */
     async registrar(input) {
-      let candidatos: number[];
-      try { candidatos = await leerPool(); } catch { throw new RegistroError('red'); }
-      if (!candidatos.length) throw new RegistroError('sin-numeros');
-
-      const descartados = new Set<number>();
-      const probar = async (n: number) => {
-        try { return await intentar(n, input); }
-        catch (e) {
-          if (e instanceof NumeroOcupado) { descartados.add(n); return null; }
+      for (let intento = 1; ; intento++) {
+        try {
+          return await runTransaction(db, async (tx) => {
+            const cref = doc(db, 'meta', 'contador');
+            const n = ((await tx.get(cref)).data()?.ultimo ?? 0) + 1;
+            const registro = { ...input, numero: n, codigo: generarCodigo() };
+            tx.set(cref, { ultimo: n });
+            tx.set(doc(db, 'registros', input.empleado), { ...registro, creado: serverTimestamp() });
+            return { ...registro, creado: Date.now() } as Registro;
+          });
+        } catch (e) {
           const code = (e as { code?: string }).code;
-          // Las reglas solo niegan la creación si el empleado ya existe (u otro dato inválido).
+          // Las reglas solo niegan la creación si el empleado ya está registrado (o el dato no es válido).
           if (code === 'permission-denied') throw new RegistroError('duplicado');
+          // Contención en el contador (muchos registros simultáneos): reintentar con una pausa aleatoria.
+          if ((code === 'aborted' || code === 'failed-precondition' || code === 'unavailable') && intento < MAX_INTENTOS) {
+            await espera(80 + Math.random() * 320 * intento);
+            continue;
+          }
           throw new RegistroError('red');
         }
-      };
-
-      // 1) Intentos al azar sobre el pool completo (muy pocas lecturas mientras haya muchos libres).
-      for (let i = 0; i < MAX_INTENTOS_ALEATORIOS; i++) {
-        const libres = candidatos.filter((n) => !descartados.has(n));
-        if (!libres.length) break;
-        const r = await probar(elegirAleatorio(libres));
-        if (r) return r;
       }
-      // 2) Cuando quedan pocos: consultar cuáles siguen libres.
-      for (let ronda = 0; ronda < 5; ronda++) {
-        const snap = await getDocs(query(collection(db, 'numeros'), where('tomado', '==', false), limit(25)));
-        const libres = snap.docs.map((d) => Number(d.id)).filter((n) => !descartados.has(n));
-        if (!libres.length) break;
-        const r = await probar(elegirAleatorio(libres));
-        if (r) return r;
-      }
-      throw new RegistroError('sin-numeros');
     },
 
     suscribirRegistros(cb) {
@@ -94,13 +67,10 @@ export function crearFirestoreStore(): Store {
         cb(s.docs.map((d) => ({ ...(d.data() as Ganador), fecha: aMs(d.data().fecha) }))),
       );
     },
-    totalNumeros: async () => (await leerPool()).length,
+    totalNumeros: async () => (await getCountFromServer(collection(db, 'padron'))).data().count,
 
     async eliminarRegistro(r) {
-      const b = writeBatch(db);
-      b.delete(doc(db, 'registros', r.empleado));
-      b.set(doc(db, 'numeros', String(r.numero)), { tomado: false });
-      await b.commit();
+      await deleteDoc(doc(db, 'registros', r.empleado)); // el número queda sin usar: la numeración no se reutiliza
     },
     async marcarGanador(r) {
       await setDoc(doc(db, 'ganadores', String(r.numero)), {
